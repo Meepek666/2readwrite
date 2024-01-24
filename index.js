@@ -1,39 +1,55 @@
-const users = require('users.json');
-const fs = require('fs/promises');
-const path = require('path');
+const fs = require('fs');
 
-async function saveData(jsonPath, folderName, overwrite = false) {
-  try {
-    
-    const jsonData = require(jsonPath);
+const path = require('path')
 
-    
-    const folderPath = path.join(__dirname, folderName);
-    await fs.mkdir(folderPath, { recursive: true });
+function saveData(jsonFileName, folderName, overwrite) {
+  const jsonData = path.join(__dirname + `\\${jsonFileName}`)
+  console.log(jsonData)
 
-    
-    for (const user of jsonData) {
-      const { id, name, surname, address, phone } = user;
 
-      const fileName = `${id}-${name}-${surname}.txt`;
-      const filePath = path.join(folderPath, fileName);
-
-      const dataToWrite = `Name: ${name}\nSurname: ${surname}\nStreet: ${address.street}\nZip Code: ${address.zipCode}\nCity: ${address.city}\nPhone: ${phone}\n`;
-
-      
-      if (!overwrite && fs.existsSync(filePath)) {
-        console.log(`Plik ${fileName} już istnieje. Ustaw parametr 'overwrite' na true i nadpisz go.`);
-      } else {
-        
-        await fs.writeFile(filePath, dataToWrite);
-        console.log(`Plik ${fileName} został zapisany pomyślnie.`);
-      }
-    }
-  } catch (error) {
-    console.error('Wystąpił błąd:', error.message);
+  if (!fs.existsSync(folderName)) {
+    fs.mkdirSync(folderName);
   }
+
+  fs.readFile(jsonData, "utf-8", function (err, data) {
+    if (err) {
+      console.error(err)
+    }
+
+    else {
+
+      let parseData = JSON.parse(data)
+      parseData.forEach(user => {
+
+
+        const { id, name, username, address, phone } = user;
+        const { street, zipcode, city } = address;
+
+
+        let nameWspaces = name.split(" ").join("_")
+
+        const fileName = `${id}-${nameWspaces}-${username}.txt`;
+        const filePath = path.join(__dirname, `${folderName}/${fileName}`);
+
+        if (fs.existsSync(filePath) && !overwrite) {
+          console.log(`Plik ${fileName} już istnieje. Dane nie zostały nadpisane.`);
+        } else {
+          const dataToSave = `Name: ${name}\nSurname: ${username}\nStreet: ${street}\nZip Code: ${zipcode}\nCity: ${city}\nPhone: ${phone}\n`;
+
+          fs.writeFileSync(filePath, dataToSave, function () {
+            console.log(`Dane zapisane do pliku: ${fileName}`);
+          });
+
+        }
+      });
+
+    }
+  })
+
 }
+saveData("users.json", "usersData", false)
+
+module.exports = saveData;
 
 
-saveData('users.json', 'output-folder', true);
 
